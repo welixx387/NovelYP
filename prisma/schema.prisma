@@ -1,0 +1,190 @@
+// Prisma schema — читалка ранобэ
+// Провайдер по умолчанию — SQLite (для быстрого локального запуска без внешней БД).
+// Для продакшена достаточно сменить provider на "postgresql" и указать DATABASE_URL — модели не меняются.
+//
+// Примечание: SQLite не поддерживает нативные enum, поэтому статусы/роли хранятся как String.
+// Допустимые значения описаны рядом с полем и продублированы как TS-типы в src/types/index.ts —
+// именно они, а не схема БД, — источник истины для валидации (zod) на границе API.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  /// "USER" | "ADMIN"
+  role         String   @default("USER")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookmarks    Bookmark[]
+  progress     ReadingProgress[]
+  comments     Comment[]
+  reviews      Review[]
+  subscription Subscription?
+  payments     Payment[]
+  resetTokens  PasswordResetToken[]
+}
+
+// Токены сброса пароля храним хэшированными — как и пароли
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Genre {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  slug   String  @unique
+  novels Novel[]
+}
+
+model Novel {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  coverUrl    String
+  author      String
+  /// "ONGOING" | "COMPLETED" | "HIATUS"
+  status      String   @default("ONGOING")
+  year        Int
+  // рейтинг хранится как сумма + количество оценок, чтобы пересчитывать среднее без доп. таблиц
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  genres    Genre[]
+  chapters  Chapter[]
+  reviews   Review[]
+  bookmarks Bookmark[]
+  progress  ReadingProgress[]
+
+  @@index([status])
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  novelId     String
+  number      Int
+  title       String
+  content     String
+  // премиум-главы доступны только пользователям с активной подпиской
+  isPremium   Boolean  @default(false)
+  publishedAt DateTime @default(now())
+
+  novel    Novel             @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  progress ReadingProgress[]
+
+  @@unique([novelId, number])
+  @@index([novelId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  novelId   String
+  userId    String
+  rating    Int
+  text      String
+  createdAt DateTime @default(now())
+
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([novelId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  chapterId String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  novelId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId])
+}
+
+// Указатель "продолжить чтение" — одна запись на пару пользователь/новелла
+model ReadingProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  novelId       String
+  chapterId     String
+  chapterNumber Int
+  scrollPercent Float    @default(0)
+  updatedAt     DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId])
+}
+
+model Subscription {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  /// "MONTHLY" | "YEARLY" | "LIFETIME" | null
+  plan      String?
+  /// "NONE" | "ACTIVE" | "EXPIRED"
+  status    String    @default("NONE")
+  startedAt DateTime?
+  expiresAt DateTime?
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// История счетов CryptoBot (создание -> ожидание -> оплата/истечение)
+model Payment {
+  id        String    @id @default(cuid())
+  userId    String
+  invoiceId String    @unique
+  /// "MONTHLY" | "YEARLY" | "LIFETIME"
+  plan      String
+  asset     String
+  amount    String
+  /// "PENDING" | "PAID" | "EXPIRED" | "FAILED"
+  status    String    @default("PENDING")
+  payUrl    String
+  createdAt DateTime  @default(now())
+  paidAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
