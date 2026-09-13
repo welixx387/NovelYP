@@ -9,7 +9,7 @@
 - **Next.js 14** (App Router) + **TypeScript** (strict)
 - **Tailwind CSS** + свои UI-компоненты в духе shadcn/ui (Radix UI под капотом) + `tailwindcss-animate`
 - **Framer Motion** — анимации (hero, карточки, 3D-tilt обложек, переходы, читалка, оплата)
-- **Prisma** + **SQLite** для разработки (легко переключить на PostgreSQL — см. ниже)
+- **Prisma** + **PostgreSQL** (например, Neon/Vercel Postgres, Supabase; для локальной разработки без внешней БД можно временно поставить SQLite — см. ниже)
 - Собственная JWT-авторизация (**jose** + httpOnly cookie), пароли — **bcryptjs**
 - **Zustand** — настройки читалки (persist в localStorage)
 - **@tanstack/react-query** — серверное состояние на клиенте
@@ -19,8 +19,8 @@
 
 ```bash
 npm install
-cp .env.example .env      # заполните при необходимости (по умолчанию уже готово к запуску)
-npx prisma migrate dev    # создаст prisma/dev.db по схеме
+cp .env.example .env      # укажите DATABASE_URL/DIRECT_URL от вашей Postgres (Neon/Supabase/Vercel Postgres)
+npx prisma migrate deploy # применит миграции из prisma/migrations
 npm run db:seed           # демо-данные: ранобэ, главы, жанры, тестовые пользователи
 npm run dev
 ```
@@ -34,15 +34,32 @@ npm run dev
 | demo@example.com | password123 |
 | reader@example.com | password123 |
 
-> Если `npx prisma migrate dev` недоступен в вашем окружении (например, корпоративная песочница
-> блокирует запуск нативных бинарников), используйте `npm run db:push` как альтернативу.
+> Если `npx prisma migrate deploy` недоступен в вашем окружении (например, песочница блокирует
+> запуск нативных бинарников), в крайнем случае можно выполнить SQL из
+> `prisma/migrations/20260101000000_init/migration.sql` вручную через консоль вашего провайдера БД.
+
+## Деплой на Vercel
+
+1. Импортируйте репозиторий в Vercel.
+2. Подключите Postgres (`Storage → Create Database`, например Neon) — Vercel сам добавит
+   `DATABASE_URL` в переменные окружения проекта. Добавьте туда же `DIRECT_URL` (непуловое
+   соединение — в Neon это "For uses requiring a connection without pgbouncer").
+3. Добавьте остальные переменные из `.env.example` (`JWT_SECRET`, `CRYPTOBOT_API_TOKEN`,
+   `NEXT_PUBLIC_APP_URL` и т.д.) в `Settings → Environment Variables`.
+4. Примените миграции и сид к базе (один раз, из терминала с доступом к `DATABASE_URL`/`DIRECT_URL`
+   продакшен-базы): `npx prisma migrate deploy && npm run db:seed`.
+5. Задеплойте (push в `master` или Redeploy в дашборде).
 
 ## Переменные окружения
 
 См. `.env.example`. Ключевые:
 
-- `DATABASE_URL` — по умолчанию `file:./dev.db` (SQLite). Для продакшена смените
-  `provider = "sqlite"` на `"postgresql"` в `prisma/schema.prisma` и укажите строку подключения —
+- `DATABASE_URL` / `DIRECT_URL` — строки подключения к PostgreSQL. `DATABASE_URL` — пуловое
+  соединение (через pgbouncer), используется приложением в рантайме; `DIRECT_URL` — прямое,
+  нужно только для `prisma migrate` (движок миграций не работает через pgbouncer). Если у
+  провайдера нет отдельного пулера — укажите одну и ту же строку в обе переменные. Модели БД
+  не привязаны к конкретному провайдеру — при желании можно на время разработки поставить
+  `provider = "sqlite"` в `prisma/schema.prisma` и `DATABASE_URL="file:./dev.db"` —
   модели данных менять не нужно.
 - `JWT_SECRET` — секрет для подписи сессионных JWT. Сгенерируйте: `openssl rand -base64 32`.
 - `CRYPTOBOT_API_TOKEN` — токен приложения из `@CryptoBot` → *Crypto Pay* → *My Apps* → *Create App*.

@@ -1,9 +1,9 @@
 // Prisma schema — читалка ранобэ
-// Провайдер по умолчанию — SQLite (для быстрого локального запуска без внешней БД).
-// Для продакшена достаточно сменить provider на "postgresql" и указать DATABASE_URL — модели не меняются.
+// Провайдер — PostgreSQL (продакшен/Vercel). Для локальной разработки без внешней БД
+// можно временно поставить provider = "sqlite" — модели не меняются (см. README).
 //
-// Примечание: SQLite не поддерживает нативные enum, поэтому статусы/роли хранятся как String.
-// Допустимые значения описаны рядом с полем и продублированы как TS-типы в src/types/index.ts —
+// Примечание: статусы/роли хранятся как String, а не enum — так схема работает одинаково
+// и на Postgres, и на SQLite. Допустимые значения продублированы как TS-типы в src/types/index.ts —
 // именно они, а не схема БД, — источник истины для валидации (zod) на границе API.
 
 generator client {
@@ -11,8 +11,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Пуловое соединение (pgbouncer) — для обычных запросов из serverless-функций.
+  url       = env("DATABASE_URL")
+  // Прямое соединение — нужно только для миграций (Prisma Migrate не работает через pgbouncer).
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
