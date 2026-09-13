@@ -10,15 +10,15 @@ const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-sans" })
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
-    default: "Ranobe Reader — читай ранобэ онлайн",
-    template: "%s — Ranobe Reader",
+    default: "NovelYP — читай ранобэ онлайн",
+    template: "%s — NovelYP",
   },
   description:
     "Онлайн-читалка ранобэ и веб-новелл: удобный режим чтения, закладки, рейтинги и премиум-главы по подписке.",
   manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
-    siteName: "Ranobe Reader",
+    siteName: "NovelYP",
   },
 };
 

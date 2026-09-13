@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const invoice = await createInvoice({
       amount,
       asset,
-      description: `Ranobe Reader — подписка «${config.title}»`,
+      description: `NovelYP — подписка «${config.title}»`,
       // payload дублирует данные из нашей БД на случай ручной сверки через getInvoices
       payload: `${user.id}:${plan}`,
     });

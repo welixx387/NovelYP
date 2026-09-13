@@ -24,7 +24,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center gap-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
           <BookMarked className="h-6 w-6 text-primary" />
-          <span className="hidden sm:inline">Ranobe Reader</span>
+          <span className="hidden sm:inline">NovelYP</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

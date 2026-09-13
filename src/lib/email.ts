@@ -39,7 +39,7 @@ export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<
   }
 
   await client.sendMail({
-    from: process.env.SMTP_FROM ?? "Ranobe Reader <no-reply@example.com>",
+    from: process.env.SMTP_FROM ?? "NovelYP <no-reply@example.com>",
     to,
     subject,
     html,

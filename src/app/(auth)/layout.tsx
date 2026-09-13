@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           className="mb-8 flex items-center justify-center gap-2 text-lg font-semibold"
         >
           <BookMarked className="h-6 w-6 text-primary" />
-          Ranobe Reader
+          NovelYP
         </Link>
         <div className="rounded-2xl border border-border bg-card/80 p-8 shadow-xl backdrop-blur-md">
           {children}

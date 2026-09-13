@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${rawToken}`;
       await sendEmail({
         to: user.email,
-        subject: "Восстановление пароля — Ranobe Reader",
+        subject: "Восстановление пароля — NovelYP",
         html: renderResetPasswordEmail(resetUrl),
       });
     }

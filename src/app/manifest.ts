@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ranobe Reader — читай ранобэ онлайн",
-    short_name: "Ranobe Reader",
+    name: "NovelYP — читай ранобэ онлайн",
+    short_name: "NovelYP",
     description: "Онлайн-читалка ранобэ и веб-новелл с закладками и премиум-главами.",
     start_url: "/",
     display: "standalone",
